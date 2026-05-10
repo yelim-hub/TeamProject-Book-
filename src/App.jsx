@@ -4,6 +4,7 @@ import MemoScreen from './screens/MemoScreen'
 import ChatScreen from './screens/ChatScreen'
 import CalendarScreen from './screens/CalendarScreen'
 import BookRecommendScreen from './screens/BookRecommendScreen'
+import MyLibraryScreen from './screens/MyLibraryScreen'
 import MyPageScreen from './screens/MyPageScreen'
 import LoginScreen from './screens/LoginScreen'
 import SignupScreen from './screens/SignupScreen'
@@ -53,6 +54,7 @@ export default function App() {
   const [books, setBooks]           = useLS('chekku_books', [])        // 여러 권
   const [activeBookId, setActiveBookId] = useLS('chekku_active_book', null)
   const [records, setRecords]       = useLS('chekku_records', [])
+  const [library, setLibrary]       = useLS('chekku_library', [])
 
   const apiKey     = (ENV_KEY && ENV_KEY !== '여기에_API_키_붙여넣기') ? ENV_KEY : storedKey
   const activeBook = books.find((b) => b.id === activeBookId) || books[0] || null
@@ -276,13 +278,16 @@ export default function App() {
         />
       ) : tab === 'calendar' ? (
         <CalendarScreen records={records} books={books} onGoChat={goChat} />
+      ) : tab === 'library' ? (
+        <MyLibraryScreen
+          library={library}
+          onRemove={(id) => setLibrary((p) => p.filter((b) => b.id !== id))}
+        />
       ) : (
         <BookRecommendScreen apiKey={apiKey} onAddBook={(b) => {
-          const dup = books.find((x) => x.title === b.title && x.author === b.author)
-          if (dup) { setActiveBookId(dup.id); return }
-          const nb = { id: `b_${Date.now()}`, title: b.title, author: b.author }
-          setBooks((p) => [...p, nb])
-          setActiveBookId(nb.id)
+          const dup = library.find((x) => x.title === b.title && x.author === b.author)
+          if (dup) return
+          setLibrary((p) => [...p, { id: `lib_${Date.now()}`, title: b.title, author: b.author }])
         }} />
       )}
 

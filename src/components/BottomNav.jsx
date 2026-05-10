@@ -20,13 +20,19 @@ const icons = {
       <line x1="12" y1="7" x2="16" y2="7"/><line x1="12" y1="11" x2="16" y2="11"/>
     </svg>
   ),
+  library: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/>
+    </svg>
+  ),
 }
 
 export default function BottomNav({ active, onChange }) {
   return (
     <nav className="bnav">
-      {['home', 'memo', 'calendar', 'recommend'].map((tab) => (
-        <button key={tab} className={`bnav-btn ${active === tab ? 'on' : ''}`} onClick={() => onChange(tab)}>
+      {['home', 'memo', 'calendar', 'recommend', 'library'].map((tab) => (
+        <button key={tab} className={`bnav-btn ${active === tab ? 'on' : ''}`} onClick={() => onChange(tab)}
+          style={{ padding: '6px 16px' }}>
           {icons[tab]}
           {active === tab && <div className="bnav-dot" />}
         </button>
