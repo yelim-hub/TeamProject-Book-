@@ -281,6 +281,7 @@ export default function App() {
       ) : tab === 'library' ? (
         <MyLibraryScreen
           library={library}
+          apiKey={apiKey}
           onRemove={(id) => setLibrary((p) => p.filter((b) => b.id !== id))}
         />
       ) : (
