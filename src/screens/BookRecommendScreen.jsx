@@ -1,10 +1,13 @@
 import { useState, useEffect, useRef } from 'react'
 import { createBookRecommendChat } from '../services/groq'
 
+const BOOKS_KEY = import.meta.env.VITE_GOOGLE_BOOKS_API_KEY || ''
+
 async function fetchBookCover(title, author) {
+  if (!BOOKS_KEY) return null
   try {
     const q = encodeURIComponent(`${title} ${author}`)
-    const res = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${q}&maxResults=1`)
+    const res = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${q}&maxResults=1&key=${BOOKS_KEY}`)
     const data = await res.json()
     const thumb = data.items?.[0]?.volumeInfo?.imageLinks?.thumbnail
     return thumb ? thumb.replace('http:', 'https:') : null

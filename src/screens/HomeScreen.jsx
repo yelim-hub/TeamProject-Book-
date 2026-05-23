@@ -1,5 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 
+const BOOKS_KEY = import.meta.env.VITE_GOOGLE_BOOKS_API_KEY || ''
+
 const GENRES = ['판타지', '범죄/스릴러', '기록문', '에세이', '라이트노벨', '교양서', '심리학', '로맨스', '학습서', '팝소설', '인문학', '스릴러']
 
 const TODAY_BOOKS = [
@@ -12,9 +14,10 @@ const TODAY_BOOKS = [
 ]
 
 async function fetchBooks(query, max = 6) {
+  if (!BOOKS_KEY) return []
   try {
     const res = await fetch(
-      `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=${max}`
+      `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=${max}&key=${BOOKS_KEY}&langRestrict=ko`
     )
     const data = await res.json()
     return data.items || []
