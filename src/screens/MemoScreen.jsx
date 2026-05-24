@@ -491,8 +491,8 @@ export default function MemoScreen({ books, activeBookId, onSetActiveBook, recor
           </div>
         )}
 
-        {/* AI 대화 버튼 */}
-        {memos.length > 0 && !showInput && !selRecord?.sticker && (
+        {/* AI 대화 버튼 - 스티커 여부 상관없이 항상 표시 */}
+        {memos.length > 0 && !showInput && (
           <button className="go-chat-btn"
             onClick={() => onGoChat({ ...selRecord, _combinedText: getCombinedText(selRecord) })}>
             <div className="go-chat-avatar">🗿</div>

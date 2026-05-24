@@ -15,7 +15,16 @@ export default function ChatScreen({ apiKey, currentBook, record, onBack, onSave
 
   useEffect(() => {
     if (!record) return
-    if (record.chatHistory?.length > 0) { setMsgs(record.chatHistory); return }
+    if (record.chatHistory?.length > 0) {
+      setMsgs(record.chatHistory)
+      // 기존 히스토리를 주입한 세션 생성 → 대화 이어가기 가능
+      const memoText = record?._combinedText || getCombinedText(record) || record?.memoText || ''
+      if (apiKey && currentBook && memoText) {
+        const s = createAuthorChat(apiKey, currentBook.title, currentBook.author, memoText, nickname, language, record.chatHistory)
+        setSession(s)
+      }
+      return
+    }
     start()
   }, [record?.id])
 
@@ -72,8 +81,7 @@ export default function ChatScreen({ apiKey, currentBook, record, onBack, onSave
     return `오류: ${m.slice(0, 80)}`
   }
 
-  const readOnly = !!record?.sticker
-  const canEnd = msgs.length >= 2 && !readOnly
+  const canEnd = msgs.length >= 2
 
   return (
     <div className="chat-wrap">
@@ -124,33 +132,32 @@ export default function ChatScreen({ apiKey, currentBook, record, onBack, onSave
         <div ref={endRef} />
       </div>
 
-      {readOnly && record?.sticker && (
-        <div style={{ padding: '12px 16px', background: 'var(--beige)', borderTop: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
-          <span style={{ fontSize: 36 }}>{record.sticker.emoji}</span>
-          <div>
-            <div style={{ fontWeight: 800, fontSize: 14, color: 'var(--green-dark)' }}>{record.sticker.title}</div>
-            <div style={{ fontSize: 12, color: 'var(--txt2)', marginTop: 2 }}>{record.sticker.summary}</div>
+      {/* 스티커가 있을 때 상단 배지로 표시 (대화는 계속 가능) */}
+      {record?.sticker && (
+        <div style={{ padding: '10px 16px', background: 'var(--beige)', borderTop: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+          <span style={{ fontSize: 28 }}>{record.sticker.emoji}</span>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontWeight: 800, fontSize: 13, color: 'var(--green-dark)' }}>{record.sticker.title}</div>
+            <div style={{ fontSize: 11, color: 'var(--txt2)', marginTop: 1 }}>{record.sticker.summary}</div>
           </div>
         </div>
       )}
 
-      {!readOnly && (
-        <div className="chat-bottom">
-          {canEnd && <button className="end-btn" onClick={endChat}>✨ AI와 토론 종료하기</button>}
-          <div className="chat-input-row">
-            <textarea className="chat-input" placeholder="chat ..." value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() } }}
-              rows={1} disabled={loading || !session}
-            />
-            <button className="send-btn" onClick={send} disabled={loading || !input.trim() || !session}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                <line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" />
-              </svg>
-            </button>
-          </div>
+      <div className="chat-bottom">
+        {canEnd && <button className="end-btn" onClick={endChat}>✨ AI와 토론 종료하기</button>}
+        <div className="chat-input-row">
+          <textarea className="chat-input" placeholder="chat ..." value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() } }}
+            rows={1} disabled={loading || !session}
+          />
+          <button className="send-btn" onClick={send} disabled={loading || !input.trim() || !session}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" />
+            </svg>
+          </button>
         </div>
-      )}
+      </div>
     </div>
   )
 }

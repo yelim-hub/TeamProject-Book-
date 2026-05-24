@@ -119,7 +119,7 @@ export async function testApiKey(apiKey) {
 }
 
 // ── 저자 페르소나 채팅 ────────────────────────────────────────────
-export function createAuthorChat(apiKey, bookTitle, author, memoText, nickname = null, language = 'ko') {
+export function createAuthorChat(apiKey, bookTitle, author, memoText, nickname = null, language = 'ko', existingHistory = []) {
   const langRule     = getLangRule(language)
   const questionRule = getQuestionRule(language)
   const roleRule     = getRoleRule(language, author)
@@ -148,6 +148,11 @@ ${roleRule}
 ${greetingLine ? greetingLine + '\n' : ''}${memoLabel}`,
     },
   ]
+
+  // 기존 대화 히스토리가 있으면 주입 (대화 이어가기)
+  existingHistory.forEach((m) => {
+    messages.push({ role: m.role === 'model' ? 'assistant' : 'user', content: m.content })
+  })
 
   return {
     async sendMessage(text) {
