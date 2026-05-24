@@ -29,7 +29,7 @@ export default function ChatScreen({ apiKey, currentBook, record, onBack, onSave
     try {
       const s = createAuthorChat(apiKey, currentBook.title, currentBook.author, memoText)
       setSession(s)
-      const reply = await s.sendMessage('메모를 읽었으니, 핵심을 찌르는 첫 질문을 해주세요.')
+      const reply = await s.sendMessage('메모를 읽었으니, 짧고 쉬운 질문 하나로 대화를 시작해주세요.')
       setMsgs([{ role: 'model', content: reply }])
     } catch (e) {
       setError(fmtErr(e))
