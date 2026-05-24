@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { createAuthorChat, generateSticker } from '../services/groq'
 import { getMemos, getCombinedText } from './MemoScreen'
 
-export default function ChatScreen({ apiKey, currentBook, record, onBack, onSave }) {
+export default function ChatScreen({ apiKey, currentBook, record, onBack, onSave, nickname, language = 'ko' }) {
   const [msgs, setMsgs] = useState([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
@@ -27,7 +27,7 @@ export default function ChatScreen({ apiKey, currentBook, record, onBack, onSave
     }
     setLoading(true); setError(null)
     try {
-      const s = createAuthorChat(apiKey, currentBook.title, currentBook.author, memoText)
+      const s = createAuthorChat(apiKey, currentBook.title, currentBook.author, memoText, nickname, language)
       setSession(s)
       const reply = await s.sendMessage('메모를 읽었으니, 짧고 쉬운 질문 하나로 대화를 시작해주세요.')
       setMsgs([{ role: 'model', content: reply }])

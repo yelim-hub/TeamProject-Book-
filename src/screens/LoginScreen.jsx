@@ -14,7 +14,7 @@ export default function LoginScreen({ onBack, onGoSignup, onLoginSuccess }) {
   const [error, setError] = useState('')
 
   const handleLogin = () => {
-    if (!id.trim() || !pw.trim()) { setError('아이디와 비밀번호를 입력해주세요.'); return }
+    if (!id.trim() || !pw.trim()) { setError('이메일과 비밀번호를 입력해주세요.'); return }
     const saved = localStorage.getItem('chekku_users')
     const users = saved ? JSON.parse(saved) : []
     const user = users.find(u => u.email === id.trim() && u.password === pw)
@@ -52,9 +52,9 @@ export default function LoginScreen({ onBack, onGoSignup, onLoginSuccess }) {
           </div>
 
           {/* 아이디 */}
-          <label style={{ fontSize: 13, fontWeight: 700, color: '#C4956A', marginBottom: 6, display: 'block' }}>아이디</label>
+          <label style={{ fontSize: 13, fontWeight: 700, color: '#C4956A', marginBottom: 6, display: 'block' }}>이메일</label>
           <div style={{ position: 'relative', marginBottom: 16 }}>
-            <input style={INPUT_STYLE} placeholder="아이디를 입력해주세요"
+            <input style={INPUT_STYLE} placeholder="가입 시 사용한 이메일"
               value={id} onChange={e => { setId(e.target.value); setError('') }} />
             {id && <button onClick={() => setId('')} style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, color: 'var(--txt3)' }}>✕</button>}
           </div>

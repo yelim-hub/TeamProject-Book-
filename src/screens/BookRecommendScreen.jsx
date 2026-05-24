@@ -69,7 +69,7 @@ function BookCard({ title, author, reason, onAdd }) {
   )
 }
 
-export default function BookRecommendScreen({ apiKey, onAddBook }) {
+export default function BookRecommendScreen({ apiKey, onAddBook, nickname, language = 'ko' }) {
   const [msgs, setMsgs] = useState([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
@@ -83,18 +83,10 @@ export default function BookRecommendScreen({ apiKey, onAddBook }) {
     start()
   }, [])
 
-  const start = async () => {
-    setLoading(true)
-    try {
-      const s = createBookRecommendChat(apiKey)
-      setSession(s)
-      const reply = await s.sendMessage('안녕! 나한테 책 추천해줘. 먼저 내 취향을 물어봐줘.')
-      setMsgs([{ role: 'model', content: reply }])
-    } catch (e) {
-      console.error(e)
-    } finally {
-      setLoading(false)
-    }
+  const start = () => {
+    const s = createBookRecommendChat(apiKey, nickname, language)
+    setSession(s)
+    setMsgs([{ role: 'model', content: s.firstMessage }])
   }
 
   const send = async () => {

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import HomeScreen from './screens/HomeScreen'
 import MemoScreen from './screens/MemoScreen'
 import ChatScreen from './screens/ChatScreen'
@@ -11,6 +11,7 @@ import SignupScreen from './screens/SignupScreen'
 import BottomNav from './components/BottomNav'
 import { testApiKey } from './services/groq'
 import { getMemos } from './screens/MemoScreen'
+import { shouldSendNotification, sendEmailNotification, getGenreBook } from './services/notification'
 
 const ENV_KEY = import.meta.env.VITE_GROQ_API_KEY || ''
 
@@ -50,14 +51,37 @@ export default function App() {
   const [bookTitle, setBookTitle]   = useState('')
   const [bookAuth, setBookAuth]     = useState('')
 
-  const [storedKey, setStoredKey]   = useLS('chekku_key', '')
-  const [books, setBooks]           = useLS('chekku_books', [])        // 여러 권
+  const [storedKey, setStoredKey]       = useLS('chekku_key', '')
+  const [books, setBooks]               = useLS('chekku_books', [])
   const [activeBookId, setActiveBookId] = useLS('chekku_active_book', null)
-  const [records, setRecords]       = useLS('chekku_records', [])
-  const [library, setLibrary]       = useLS('chekku_library', [])
+  const [records, setRecords]           = useLS('chekku_records', [])
+  const [library, setLibrary]           = useLS('chekku_library', [])
+  const [theme, setTheme]               = useLS('chekku_theme', 'light')
+  const [language, setLanguage]         = useLS('chekku_language', 'ko')
+  const [notifEnabled, setNotifEnabled] = useLS('chekku_notif_enabled', false)
+
+  const notifChecked = useRef(false)
 
   const apiKey     = (ENV_KEY && ENV_KEY !== '여기에_API_키_붙여넣기') ? ENV_KEY : storedKey
   const activeBook = books.find((b) => b.id === activeBookId) || books[0] || null
+
+  // 테마 적용
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme)
+  }, [theme])
+
+  // 알림 체크 (앱 첫 로드 시 1회)
+  useEffect(() => {
+    if (splash || notifChecked.current || !currentUser || !notifEnabled) return
+    notifChecked.current = true
+    const lastSent = localStorage.getItem('chekku_notif_last_sent')
+    if (shouldSendNotification(records, notifEnabled, lastSent)) {
+      const book = getGenreBook(currentUser.genres)
+      sendEmailNotification(currentUser, book).then((sent) => {
+        if (sent) localStorage.setItem('chekku_notif_last_sent', new Date().toISOString())
+      })
+    }
+  }, [splash])
 
   useEffect(() => {
     const t = setTimeout(() => {
@@ -111,10 +135,10 @@ export default function App() {
   }
 
   /* ── 메모 저장 ── */
-  const handleSaveMemo = ({ memoText, pages, date, bookId }) => {
+  const handleSaveMemo = ({ memoText, pages, date, bookId, type, photos }) => {
     const targetBook = books.find((b) => b.id === bookId) || activeBook
     if (!targetBook) return
-    const newMemo = { id:`m_${Date.now()}`, pages: pages||'', text: memoText }
+    const newMemo = { id:`m_${Date.now()}`, pages: pages||'', text: memoText, type: type||'text', photos: photos||[] }
     const ex = records.find((r) => r.date === date && r.bookId === targetBook.id)
     if (ex) {
       setRecords((p) => p.map((r) =>
@@ -240,6 +264,8 @@ export default function App() {
         <ChatScreen apiKey={apiKey} currentBook={chatBook} record={chatRec}
           onBack={() => { setChatRec(null); setTab('memo') }}
           onSave={handleSaveRecord}
+          nickname={currentUser?.nickname}
+          language={language}
         />
       ) : showLogin ? (
         <LoginScreen
@@ -260,6 +286,9 @@ export default function App() {
           onLogin={() => setShowLogin(true)}
           onSignup={() => setShowSignup(true)}
           onLogout={() => { localStorage.removeItem('chekku_current_user'); setCurrentUser(null) }}
+          theme={theme}           onChangeTheme={setTheme}
+          language={language}     onChangeLanguage={setLanguage}
+          notifEnabled={notifEnabled} onToggleNotif={setNotifEnabled}
         />
       ) : tab === 'home' ? (
         <HomeScreen
@@ -275,6 +304,9 @@ export default function App() {
           onSaveMemo={handleSaveMemo}
           onGoChat={goChat}
           onAddBook={() => setShowBook(true)}
+          apiKey={apiKey}
+          nickname={currentUser?.nickname}
+          language={language}
         />
       ) : tab === 'calendar' ? (
         <CalendarScreen records={records} books={books} onGoChat={goChat} />
@@ -285,7 +317,7 @@ export default function App() {
           onRemove={(id) => setLibrary((p) => p.filter((b) => b.id !== id))}
         />
       ) : (
-        <BookRecommendScreen apiKey={apiKey} onAddBook={(b) => {
+        <BookRecommendScreen apiKey={apiKey} nickname={currentUser?.nickname} language={language} onAddBook={(b) => {
           const dup = library.find((x) => x.title === b.title && x.author === b.author)
           if (dup) return
           setLibrary((p) => [...p, { id: `lib_${Date.now()}`, title: b.title, author: b.author }])
