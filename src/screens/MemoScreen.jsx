@@ -300,7 +300,7 @@ function PhotoCaptureModal({ apiKey, nickname, language, onSave, onClose }) {
   )
 }
 
-export default function MemoScreen({ books, activeBookId, onSetActiveBook, records, onSaveMemo, onGoChat, onAddBook, apiKey, nickname, language = 'ko' }) {
+export default function MemoScreen({ books, activeBookId, onSetActiveBook, records, onSaveMemo, onEditMemo, onDeleteMemo, onGoChat, onAddBook, apiKey, nickname, language = 'ko' }) {
   const today = new Date()
   const todayStr = toStr(today)
   const [selDate, setSelDate] = useState(todayStr)
@@ -309,6 +309,10 @@ export default function MemoScreen({ books, activeBookId, onSetActiveBook, recor
   const [showPhoto, setShowPhoto] = useState(false)
   const [pages, setPages] = useState('')
   const [text, setText] = useState('')
+  const [editingId, setEditingId] = useState(null)
+  const [editText, setEditText] = useState('')
+  const [editPages, setEditPages] = useState('')
+  const [deletingId, setDeletingId] = useState(null)
 
   const days = useMemo(getDays, [])
   const todayRef = useRef(null)
@@ -336,6 +340,27 @@ export default function MemoScreen({ books, activeBookId, onSetActiveBook, recor
     if (!activeBook) return
     onSaveMemo({ memoText: content, pages: '', date: selDate, bookId: activeBook.id, type: 'photo', photos })
     setShowPhoto(false)
+  }
+
+  const startEdit = (m) => {
+    setEditingId(m.id)
+    setEditText(m.text)
+    setEditPages(m.pages || '')
+    setDeletingId(null)
+  }
+
+  const cancelEdit = () => { setEditingId(null); setEditText(''); setEditPages('') }
+
+  const saveEdit = (m) => {
+    if (!editText.trim() || !selRecord) return
+    onEditMemo(selRecord.id, m.id, { text: editText.trim(), pages: editPages.trim() })
+    setEditingId(null)
+  }
+
+  const confirmDelete = (memoId) => {
+    if (!selRecord) return
+    onDeleteMemo(selRecord.id, memoId)
+    setDeletingId(null)
   }
 
   return (
@@ -426,23 +451,81 @@ export default function MemoScreen({ books, activeBookId, onSetActiveBook, recor
         )}
 
         {/* 기존 메모 목록 */}
-        {memos.map((m, i) => (
-          <div key={m.id} className="memo-note" style={{ cursor:'default' }}>
-            <div className="note-date">
-              {selDate}{memos.length > 1 ? ` · 메모 ${i+1}` : ''}
-              {m.type === 'voice' ? ' 🎤' : m.type === 'photo' ? ' 📷' : ''}
-            </div>
-            {m.pages && <div className="note-pages">{activeBook?.title} {m.pages}</div>}
-            {m.type === 'photo' && m.photos?.length > 0 && (
-              <div style={{ display:'flex', gap:6, marginBottom:8, flexWrap:'wrap' }}>
-                {m.photos.map((src, pi) => (
-                  <img key={pi} src={src} alt="" style={{ width:56, height:56, objectFit:'cover', borderRadius:6, border:'1px solid var(--border)' }} />
-                ))}
+        {memos.map((m, i) => {
+          // 편집 모드
+          if (editingId === m.id) {
+            return (
+              <div key={m.id} className="card" style={{ marginBottom:12 }}>
+                <div style={{ fontSize:13, fontWeight:700, color:'var(--green-dark)', marginBottom:12 }}>
+                  ✏️ 메모 수정
+                </div>
+                {m.type === 'text' && (
+                  <>
+                    <label className="inp-label">페이지 (선택)</label>
+                    <input className="inp" placeholder="예: pp. 117-141" value={editPages}
+                      onChange={(e) => setEditPages(e.target.value)} style={{ marginBottom:10 }} />
+                  </>
+                )}
+                <label className="inp-label">메모 내용</label>
+                <textarea className="inp"
+                  placeholder="메모 내용을 입력하세요..."
+                  value={editText} onChange={(e) => setEditText(e.target.value)} autoFocus />
+                <div style={{ display:'flex', gap:8, marginTop:12 }}>
+                  <button className="btn-s" style={{ flex:1 }} onClick={cancelEdit}>취소</button>
+                  <button className="btn-p" style={{ flex:2 }} onClick={() => saveEdit(m)} disabled={!editText.trim()}>저장</button>
+                </div>
               </div>
-            )}
-            <div className="note-text">{m.text}</div>
-          </div>
-        ))}
+            )
+          }
+
+          // 일반 표시 모드
+          return (
+            <div key={m.id} className="memo-note" style={{ cursor:'default' }}>
+              <div className="note-date">
+                {selDate}{memos.length > 1 ? ` · 메모 ${i+1}` : ''}
+                {m.type === 'voice' ? ' 🎤' : m.type === 'photo' ? ' 📷' : ''}
+              </div>
+              {m.pages && <div className="note-pages">{activeBook?.title} {m.pages}</div>}
+              {m.type === 'photo' && m.photos?.length > 0 && (
+                <div style={{ display:'flex', gap:6, marginBottom:8, flexWrap:'wrap' }}>
+                  {m.photos.map((src, pi) => (
+                    <img key={pi} src={src} alt="" style={{ width:56, height:56, objectFit:'cover', borderRadius:6, border:'1px solid var(--border)' }} />
+                  ))}
+                </div>
+              )}
+              <div className="note-text">{m.text}</div>
+
+              {/* 수정 / 삭제 버튼 */}
+              <div style={{ display:'flex', justifyContent:'flex-end', gap:4, marginTop:10, paddingTop:8, borderTop:'1px solid rgba(0,0,0,.07)' }}>
+                <button onClick={() => startEdit(m)}
+                  style={{ background:'none', border:'none', fontSize:12, cursor:'pointer', color:'var(--txt2)', padding:'3px 8px', borderRadius:6, fontFamily:'inherit', fontWeight:600 }}>
+                  ✏️ 수정
+                </button>
+                <button onClick={() => setDeletingId(deletingId === m.id ? null : m.id)}
+                  style={{ background:'none', border:'none', fontSize:12, cursor:'pointer', color:'var(--red)', padding:'3px 8px', borderRadius:6, fontFamily:'inherit', fontWeight:600 }}>
+                  🗑️ 삭제
+                </button>
+              </div>
+
+              {/* 삭제 확인 */}
+              {deletingId === m.id && (
+                <div style={{ marginTop:8, padding:'10px 12px', background:'rgba(212,91,74,.08)', borderRadius:10 }}>
+                  <p style={{ fontSize:12, color:'var(--red)', fontWeight:700, marginBottom:8 }}>정말 삭제하시겠어요?</p>
+                  <div style={{ display:'flex', gap:6 }}>
+                    <button onClick={() => setDeletingId(null)}
+                      style={{ flex:1, background:'var(--beige)', border:'none', borderRadius:8, padding:'7px', fontSize:12, cursor:'pointer', fontFamily:'inherit', fontWeight:600 }}>
+                      취소
+                    </button>
+                    <button onClick={() => confirmDelete(m.id)}
+                      style={{ flex:1, background:'var(--red)', color:'white', border:'none', borderRadius:8, padding:'7px', fontSize:12, cursor:'pointer', fontFamily:'inherit', fontWeight:700 }}>
+                      삭제
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )
+        })}
 
         {/* 스티커 완성 배지 */}
         {selRecord?.sticker && (

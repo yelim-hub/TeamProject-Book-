@@ -155,6 +155,24 @@ export default function App() {
     }
   }
 
+  /* ── 메모 수정 ── */
+  const handleEditMemo = (recordId, memoId, updates) => {
+    setRecords((p) => p.map((r) => {
+      if (r.id !== recordId) return r
+      const newMemos = getMemos(r).map((m) => m.id === memoId ? { ...m, ...updates } : m)
+      return { ...r, memos: newMemos }
+    }))
+  }
+
+  /* ── 메모 삭제 ── */
+  const handleDeleteMemo = (recordId, memoId) => {
+    setRecords((p) => p.map((r) => {
+      if (r.id !== recordId) return r
+      const newMemos = getMemos(r).filter((m) => m.id !== memoId)
+      return { ...r, memos: newMemos, memoText: null }
+    }))
+  }
+
   /* ── 레코드 저장 (채팅 완료) ── */
   const handleSaveRecord = (updated) => {
     setRecords((p) => p.map((r) => r.id===updated.id ? updated : r))
@@ -302,6 +320,8 @@ export default function App() {
           onSetActiveBook={setActiveBookId}
           records={records}
           onSaveMemo={handleSaveMemo}
+          onEditMemo={handleEditMemo}
+          onDeleteMemo={handleDeleteMemo}
           onGoChat={goChat}
           onAddBook={() => setShowBook(true)}
           apiKey={apiKey}
